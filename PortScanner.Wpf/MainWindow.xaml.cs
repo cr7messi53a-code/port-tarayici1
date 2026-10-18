@@ -143,6 +143,48 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
         finally { SetBusy(false); }
     }
+private async void PwBtn_Click(object sender, RoutedEventArgs e)
+{
+    string pw = PwBox.Password;
+    if (string.IsNullOrEmpty(pw))
+    {
+        PwResult.Foreground = Brushes.Gray;
+        PwResult.Text = "Önce bir parola yaz.";
+        return;
+    }
 
+    PwBtn.IsEnabled = false;
+    PwResult.Foreground = Brushes.Gray;
+    PwResult.Text = "Kontrol ediliyor...";
+
+    var analysis = PasswordChecker.Analyze(pw);
+    PwStrength.Text = $"Güç tahmini: {analysis.Level} ({analysis.Score}/100)\n• "
+        + string.Join("\n• ", analysis.Tips);
+
+    try
+    {
+        int count = await PasswordChecker.GetBreachCountAsync(pw);
+        if (count > 0)
+        {
+            PwResult.Text = $"✖ Bu parola veri sızıntılarında {count:N0} kez görülmüş. Kullanma!";
+            PwResult.Foreground = Brushes.Crimson;
+        }
+        else
+        {
+            PwResult.Text = "✔ Bilinen veri sızıntılarında bulunamadı. (Bu, güçlü olduğu anlamına gelmez.)";
+            PwResult.Foreground = Brushes.ForestGreen;
+        }
+    }
+    catch (Exception)
+    {
+        PwResult.Text = "Sızıntı kontrolü yapılamadı (internet yok ya da servise ulaşılamadı).";
+        PwResult.Foreground = Brushes.DarkOrange;
+    }
+    finally
+    {
+        PwBox.Clear();
+        PwBtn.IsEnabled = true;
+    }
+}
     private void CancelBtn_Click(object sender, RoutedEventArgs e) => _cts?.Cancel();
 }
