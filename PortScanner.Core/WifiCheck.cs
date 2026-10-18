@@ -58,9 +58,8 @@ public class WifiCheck : ISecurityCheck
             {
                 var bad = open.Concat(wep).ToList();
                 return new CheckResult(Name, CheckStatus.Basarisiz,
-                    $"Güvensiz kayıtlı ağlar (şifresiz veya WEP): {Join(bad)}",
-                    "Ayarlar > Ağ ve İnternet > Wi-Fi > Bilinen ağları yönet > ilgili ağı 'Unut'. Kendi modemin ise güvenliğini WPA2 veya WPA3 yap.", Weight);
-            }
+    $"Şifresiz veya eski (WEP) kayıtlı ağlar: {Join(bad)}. Bu ağlarda trafiğin başkaları tarafından görülebilir.",
+    "Halka açık ağları (kafe, otel, belediye vb.) işin bitince 'Unut' ya da otomatik bağlanmayı kapat: Ayarlar > Ağ ve İnternet > Wi-Fi > Bilinen ağları yönet. Bağlanman gerekirse VPN kullan. Kendi modemin ise güvenliğini WPA2 veya WPA3 yap.", Weight);
 
             if (weak.Count > 0)
                 return new CheckResult(Name, CheckStatus.Uyari,
