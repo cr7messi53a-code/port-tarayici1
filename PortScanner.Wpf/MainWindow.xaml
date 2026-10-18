@@ -1,90 +1,164 @@
 <Window x:Class="PortScanner.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Port Tarayıcı" Height="560" Width="980">
+        Title="Port Tarayıcı" Height="620" Width="980">
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Ağ tarama -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0">
-            <TextBlock Text="Ağ:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <TextBox x:Name="CidrBox" Width="160"/>
-            <Button x:Name="NetBtn" Content="Ağı Tara" Width="90" Margin="16,0,0,0" Click="NetBtn_Click"/>
-        </StackPanel>
+        <TabControl Grid.Row="0">
 
-        <!-- Port tarama -->
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,10,0,0">
-            <TextBlock Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <TextBox x:Name="HostBox" Text="127.0.0.1" Width="140"/>
-            <TextBlock Text="Port:" VerticalAlignment="Center" Margin="16,0,8,0"/>
-            <TextBox x:Name="StartBox" Text="1" Width="60"/>
-            <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0"/>
-            <TextBox x:Name="EndBox" Text="1024" Width="60"/>
-            <Button x:Name="ScanBtn" Content="Portları Tara" Width="100" Margin="16,0,0,0" Click="ScanBtn_Click"/>
-            <Button x:Name="CancelBtn" Content="İptal" Width="80" Margin="8,0,0,0"
-                    IsEnabled="False" Click="CancelBtn_Click"/>
-        </StackPanel>
+            <!-- SEKME 1: Ağ Tarayıcı -->
+            <TabItem Header="Ağ Tarayıcı">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-        <ProgressBar x:Name="Bar" Grid.Row="2" Height="10" Margin="0,12,0,12"/>
+                    <StackPanel Orientation="Horizontal" Grid.Row="0">
+                        <TextBlock Text="Ağ:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox x:Name="CidrBox" Width="160"/>
+                        <Button x:Name="NetBtn" Content="Ağı Tara" Width="90" Margin="16,0,0,0" Click="NetBtn_Click"/>
+                    </StackPanel>
 
-        <Grid Grid.Row="3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380"/>
-                <ColumnDefinition Width="12"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,10,0,12">
+                        <TextBlock Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox x:Name="HostBox" Text="127.0.0.1" Width="140"/>
+                        <TextBlock Text="Port:" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                        <TextBox x:Name="StartBox" Text="1" Width="60"/>
+                        <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0"/>
+                        <TextBox x:Name="EndBox" Text="1024" Width="60"/>
+                        <Button x:Name="ScanBtn" Content="Portları Tara" Width="100" Margin="16,0,0,0" Click="ScanBtn_Click"/>
+                        <Button x:Name="CancelBtn" Content="İptal" Width="80" Margin="8,0,0,0"
+                                IsEnabled="False" Click="CancelBtn_Click"/>
+                    </StackPanel>
 
-            <DataGrid x:Name="DeviceGrid" Grid.Column="0" AutoGenerateColumns="False" IsReadOnly="True"
-                      MouseDoubleClick="DeviceGrid_DoubleClick">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="IP" Binding="{Binding Ip}" Width="110"/>
-                    <DataGridTextColumn Header="Cihaz Adı" Binding="{Binding HostName}" Width="*"/>
-                    <DataGridTextColumn Header="Yanıt" Binding="{Binding Info}" Width="90"/>
-                </DataGrid.Columns>
-            </DataGrid>
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="380"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-            <DataGrid x:Name="PortGrid" Grid.Column="2" AutoGenerateColumns="False" IsReadOnly="True">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Port" Binding="{Binding Port}" Width="60"/>
-                    <DataGridTextColumn Header="Servis" Binding="{Binding Service}" Width="90"/>
-                    <DataGridTextColumn Header="Risk" Binding="{Binding RiskText}" Width="85">
-                        <DataGridTextColumn.CellStyle>
-                            <Style TargetType="DataGridCell">
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Background" Value="#6B7280"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Risk}" Value="Yuksek">
-                                        <Setter Property="Background" Value="#DC2626"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Risk}" Value="Orta">
-                                        <Setter Property="Background" Value="#D97706"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Risk}" Value="Dusuk">
-                                        <Setter Property="Background" Value="#16A34A"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGridTextColumn.CellStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="Ne demek, ne yapmalı?" Binding="{Binding Note}" Width="*">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="TextWrapping" Value="Wrap"/>
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
+                        <DataGrid x:Name="DeviceGrid" Grid.Column="0" AutoGenerateColumns="False" IsReadOnly="True"
+                                  MouseDoubleClick="DeviceGrid_DoubleClick">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="IP" Binding="{Binding Ip}" Width="110"/>
+                                <DataGridTextColumn Header="Cihaz Adı" Binding="{Binding HostName}" Width="*"/>
+                                <DataGridTextColumn Header="Yanıt" Binding="{Binding Info}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
 
-        <TextBlock x:Name="StatusText" Grid.Row="4" Margin="0,8,0,0" Text="Hazır."/>
+                        <DataGrid x:Name="PortGrid" Grid.Column="2" AutoGenerateColumns="False" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Port" Binding="{Binding Port}" Width="60"/>
+                                <DataGridTextColumn Header="Servis" Binding="{Binding Service}" Width="90"/>
+                                <DataGridTextColumn Header="Risk" Binding="{Binding RiskText}" Width="85">
+                                    <DataGridTextColumn.CellStyle>
+                                        <Style TargetType="DataGridCell">
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Background" Value="#6B7280"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Risk}" Value="Yuksek">
+                                                    <Setter Property="Background" Value="#DC2626"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Risk}" Value="Orta">
+                                                    <Setter Property="Background" Value="#D97706"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Risk}" Value="Dusuk">
+                                                    <Setter Property="Background" Value="#16A34A"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTextColumn.CellStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Ne demek, ne yapmalı?" Binding="{Binding Note}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- SEKME 2: Bilgisayar Kontrolü -->
+            <TabItem Header="Bilgisayar Kontrolü">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <Button x:Name="AuditBtn" Content="Bilgisayarımı Kontrol Et" Padding="16,8" Click="AuditBtn_Click"/>
+                        <TextBlock x:Name="ScoreText" Text="--" FontSize="40" FontWeight="Bold"
+                                   Margin="24,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="/ 100" FontSize="18" Foreground="Gray"
+                                   VerticalAlignment="Bottom" Margin="4,0,0,8"/>
+                    </StackPanel>
+
+                    <DataGrid x:Name="AuditGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" Width="100">
+                                <DataGridTextColumn.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="Background" Value="#6B7280"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="Basarili">
+                                                <Setter Property="Background" Value="#16A34A"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Uyari">
+                                                <Setter Property="Background" Value="#D97706"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="Basarisiz">
+                                                <Setter Property="Background" Value="#DC2626"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGridTextColumn.CellStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Kontrol" Binding="{Binding Name}" Width="220">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Sonuç" Binding="{Binding Message}" Width="2*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Ne yapmalı?" Binding="{Binding Advice}" Width="2*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <ProgressBar x:Name="Bar" Grid.Row="1" Height="10" Margin="0,12,0,0"/>
+        <TextBlock x:Name="StatusText" Grid.Row="2" Margin="0,8,0,0" Text="Hazır."/>
     </Grid>
 </Window>
