@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PortScanner.Core/PortScanner.Core.csproj" />
+  <Project Path="PortScanner.Wpf/PortScanner.Wpf.csproj" />
+</Solution>
