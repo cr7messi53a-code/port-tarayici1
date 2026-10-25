@@ -4,7 +4,7 @@ namespace PortScanner.Core;
 
 public enum RiskLevel { Bilinmiyor, Dusuk, Orta, Yuksek }
 
-public record PortResult(int Port, string Service, string Note, RiskLevel Risk)
+public record PortResult(int Port, string Service, string Note, RiskLevel Risk, string Banner = "")
 {
     public string RiskText => Risk switch
     {
@@ -17,6 +17,9 @@ public record PortResult(int Port, string Service, string Note, RiskLevel Risk)
 
 public static class TcpPortScanner
 {
+    // Bu portlarda banner okumanın anlamı yok (ikili protokol ya da şifreli)
+    private static readonly HashSet<int> NoBannerPorts = new() { 135, 139, 445, 3389, 443, 8443 };
+
     private static readonly Dictionary<int, (string Service, RiskLevel Risk, string Note)> Known = new()
     {
         [21]    = ("FTP", RiskLevel.Yuksek, "Şifresiz dosya aktarımı. Kullanmıyorsan kapat, kullanıyorsan SFTP'ye geç."),
@@ -69,6 +72,35 @@ public static class TcpPortScanner
                             : new PortResult(p, "Bilinmiyor",
                                 "Tanınmayan servis. Sen açmadıysan hangi program olduğunu araştır.",
                                 RiskLevel.Bilinmiyor);
+
+                        if (!NoBannerPorts.Contains(p))
+                        {
+                            string banner = await BannerGrabber.GrabAsync(host, p, 1500, ct);
+                            if (banner.Length > 0)
+                            {
+                                result = result with { Banner = banner };
+
+                                if (result.Service == "Bilinmiyor")
+                                {
+                                    var id = VersionAdvisor.Identify(banner);
+                                    if (id != null)
+                                        result = result with
+                                        {
+                                            Service = id,
+                                            Note = "Servis, verdiği yanıttan tanındı."
+                                        };
+                                }
+
+                                var warning = VersionAdvisor.Warn(banner);
+                                if (warning != null)
+                                    result = result with
+                                    {
+                                        Risk = RiskLevel.Yuksek,
+                                        Note = warning + " " + result.Note
+                                    };
+                            }
+                        }
+
                         onOpen(result);
                     }
                 }

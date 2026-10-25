@@ -1,4 +1,6 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -12,6 +14,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<DeviceResult> _devices = new();
     private readonly ObservableCollection<CheckResult> _checks = new();
     private CancellationTokenSource? _cts;
+    private int? _lastScore;
 
     public MainWindow()
     {
@@ -27,6 +30,7 @@ public partial class MainWindow : Window
         ScanBtn.IsEnabled = !busy;
         NetBtn.IsEnabled = !busy;
         AuditBtn.IsEnabled = !busy;
+        ReportBtn.IsEnabled = !busy;
         CancelBtn.IsEnabled = busy;
     }
 
@@ -48,6 +52,7 @@ public partial class MainWindow : Window
     private async void AuditBtn_Click(object sender, RoutedEventArgs e)
     {
         _checks.Clear();
+        _lastScore = null;
         ScoreText.Text = "--";
         ScoreText.Foreground = Brushes.Gray;
         Bar.Value = 0;
@@ -59,6 +64,7 @@ public partial class MainWindow : Window
         try
         {
             int score = await SecurityAudit.RunAsync(r => _checks.Add(r), progress, _cts.Token);
+            _lastScore = score;
 
             ScoreText.Text = score.ToString();
             ScoreText.Foreground = score >= 80
@@ -143,48 +149,81 @@ public partial class MainWindow : Window
         catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
         finally { SetBusy(false); }
     }
-private async void PwBtn_Click(object sender, RoutedEventArgs e)
-{
-    string pw = PwBox.Password;
-    if (string.IsNullOrEmpty(pw))
+
+    private async void PwBtn_Click(object sender, RoutedEventArgs e)
     {
+        string pw = PwBox.Password;
+        if (string.IsNullOrEmpty(pw))
+        {
+            PwResult.Foreground = Brushes.Gray;
+            PwResult.Text = "Önce bir parola yaz.";
+            return;
+        }
+
+        PwBtn.IsEnabled = false;
         PwResult.Foreground = Brushes.Gray;
-        PwResult.Text = "Önce bir parola yaz.";
-        return;
-    }
+        PwResult.Text = "Kontrol ediliyor...";
 
-    PwBtn.IsEnabled = false;
-    PwResult.Foreground = Brushes.Gray;
-    PwResult.Text = "Kontrol ediliyor...";
+        var analysis = PasswordChecker.Analyze(pw);
+        PwStrength.Text = $"Güç tahmini: {analysis.Level} ({analysis.Score}/100)\n• "
+            + string.Join("\n• ", analysis.Tips);
 
-    var analysis = PasswordChecker.Analyze(pw);
-    PwStrength.Text = $"Güç tahmini: {analysis.Level} ({analysis.Score}/100)\n• "
-        + string.Join("\n• ", analysis.Tips);
-
-    try
-    {
-        int count = await PasswordChecker.GetBreachCountAsync(pw);
-        if (count > 0)
+        try
         {
-            PwResult.Text = $"✖ Bu parola veri sızıntılarında {count:N0} kez görülmüş. Kullanma!";
-            PwResult.Foreground = Brushes.Crimson;
+            int count = await PasswordChecker.GetBreachCountAsync(pw);
+            if (count > 0)
+            {
+                PwResult.Text = $"✖ Bu parola veri sızıntılarında {count:N0} kez görülmüş. Kullanma!";
+                PwResult.Foreground = Brushes.Crimson;
+            }
+            else
+            {
+                PwResult.Text = "✔ Bilinen veri sızıntılarında bulunamadı. (Bu, güçlü olduğu anlamına gelmez.)";
+                PwResult.Foreground = Brushes.ForestGreen;
+            }
         }
-        else
+        catch (Exception)
         {
-            PwResult.Text = "✔ Bilinen veri sızıntılarında bulunamadı. (Bu, güçlü olduğu anlamına gelmez.)";
-            PwResult.Foreground = Brushes.ForestGreen;
+            PwResult.Text = "Sızıntı kontrolü yapılamadı (internet yok ya da servise ulaşılamadı).";
+            PwResult.Foreground = Brushes.DarkOrange;
+        }
+        finally
+        {
+            PwBox.Clear();
+            PwBtn.IsEnabled = true;
         }
     }
-    catch (Exception)
+
+    private void ReportBtn_Click(object sender, RoutedEventArgs e)
     {
-        PwResult.Text = "Sızıntı kontrolü yapılamadı (internet yok ya da servise ulaşılamadı).";
-        PwResult.Foreground = Brushes.DarkOrange;
+        if (_devices.Count == 0 && _ports.Count == 0 && _checks.Count == 0)
+        {
+            MessageBox.Show("Rapora eklenecek sonuç yok. Önce bir tarama ya da kontrol yap.");
+            return;
+        }
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "HTML raporu (*.html)|*.html",
+            FileName = $"guvenlik-raporu-{DateTime.Now:yyyyMMdd-HHmm}.html"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        try
+        {
+            string html = ReportBuilder.BuildHtml(
+                _devices, HostBox.Text.Trim(), _ports, _checks, _lastScore);
+            File.WriteAllText(dlg.FileName, html, new UTF8Encoding(true));
+            StatusText.Text = "Rapor kaydedildi: " + dlg.FileName;
+
+            try { Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true }); }
+            catch { }
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Rapor kaydedilemedi: " + ex.Message;
+        }
     }
-    finally
-    {
-        PwBox.Clear();
-        PwBtn.IsEnabled = true;
-    }
-}
+
     private void CancelBtn_Click(object sender, RoutedEventArgs e) => _cts?.Cancel();
 }
