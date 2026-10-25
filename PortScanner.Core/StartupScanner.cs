@@ -9,25 +9,30 @@ public record StartupItem(
 {
     public string RiskText => Risk switch
     {
-        RiskLevel.Yuksek => "Yüksek",
-        RiskLevel.Orta => "Orta",
-        RiskLevel.Dusuk => "Düşük",
-        _ => "Bilinmiyor"
+        RiskLevel.Yuksek => L.T("Yüksek", "High"),
+        RiskLevel.Orta => L.T("Orta", "Medium"),
+        RiskLevel.Dusuk => L.T("Düşük", "Low"),
+        _ => L.T("Bilinmiyor", "Unknown")
     };
 }
 
 [SupportedOSPlatform("windows")]
 public static class StartupScanner
 {
+    public static string SigUnsigned => L.T("İmzasız", "Unsigned");
+
     public static async Task<List<StartupItem>> ScanAsync(CancellationToken ct = default)
     {
         var raw = new List<(string Name, string Command, string Source)>();
 
+        string regUser = L.T("Kayıt defteri (kullanıcı)", "Registry (user)");
+        string regSys = L.T("Kayıt defteri (sistem)", "Registry (system)");
+
         var keys = new (RegistryKey Root, string Sub, string Source)[]
         {
-            (Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Run", "Kayıt defteri (kullanıcı)"),
-            (Registry.LocalMachine, @"Software\Microsoft\Windows\CurrentVersion\Run", "Kayıt defteri (sistem)"),
-            (Registry.LocalMachine, @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run", "Kayıt defteri (sistem)"),
+            (Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\Run", regUser),
+            (Registry.LocalMachine, @"Software\Microsoft\Windows\CurrentVersion\Run", regSys),
+            (Registry.LocalMachine, @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Run", regSys),
         };
 
         foreach (var (root, sub, source) in keys)
@@ -49,6 +54,8 @@ public static class StartupScanner
             Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup),
         };
 
+        string startupFolder = L.T("Başlangıç klasörü", "Startup folder");
+
         foreach (var dir in folders)
         {
             try
@@ -57,7 +64,7 @@ public static class StartupScanner
                 foreach (var f in Directory.GetFiles(dir))
                 {
                     if (f.EndsWith("desktop.ini", StringComparison.OrdinalIgnoreCase)) continue;
-                    raw.Add((System.IO.Path.GetFileNameWithoutExtension(f), f, "Başlangıç klasörü"));
+                    raw.Add((System.IO.Path.GetFileNameWithoutExtension(f), f, startupFolder));
                 }
             }
             catch { }
@@ -134,11 +141,13 @@ public static class StartupScanner
     {
         if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
             return new StartupItem(name, source, path, "-", RiskLevel.Bilinmiyor,
-                "Kısayol. Hedef programı elle kontrol et.");
+                L.T("Kısayol. Hedef programı elle kontrol et.",
+                    "Shortcut. Check the target program manually."));
 
         if (!File.Exists(path))
-            return new StartupItem(name, source, path, "Dosya yok", RiskLevel.Orta,
-                "Program dosyası bulunamadı. Silinmiş bir programın kalıntısı olabilir, gerekmiyorsa kaldır.");
+            return new StartupItem(name, source, path, L.T("Dosya yok", "Missing"), RiskLevel.Orta,
+                L.T("Program dosyası bulunamadı. Silinmiş bir programın kalıntısı olabilir, gerekmiyorsa kaldır.",
+                    "The program file was not found. It may be a leftover of a removed program, remove it if not needed."));
 
         sigs.TryGetValue(path, out var status);
 
@@ -149,24 +158,26 @@ public static class StartupScanner
         switch (status)
         {
             case "Valid":
-                sig = "İmzalı"; risk = RiskLevel.Dusuk;
-                note = "Geçerli dijital imzası var.";
+                sig = L.T("İmzalı", "Signed"); risk = RiskLevel.Dusuk;
+                note = L.T("Geçerli dijital imzası var.", "Has a valid digital signature.");
                 break;
             case "NotSigned":
-                sig = "İmzasız"; risk = RiskLevel.Orta;
-                note = "Dijital imzası yok. Bu tek başına zararlı demek değildir ama tanımıyorsan araştır.";
+                sig = SigUnsigned; risk = RiskLevel.Orta;
+                note = L.T("Dijital imzası yok. Bu tek başına zararlı demek değildir ama tanımıyorsan araştır.",
+                           "No digital signature. This alone does not mean it is malicious, but look into it if you don't recognize it.");
                 break;
             case "HashMismatch":
-                sig = "Bozuk imza"; risk = RiskLevel.Yuksek;
-                note = "İmzası var ama dosya sonradan değiştirilmiş görünüyor. Dikkat!";
+                sig = L.T("Bozuk imza", "Broken signature"); risk = RiskLevel.Yuksek;
+                note = L.T("İmzası var ama dosya sonradan değiştirilmiş görünüyor. Dikkat!",
+                           "It has a signature but the file seems to have been modified afterwards. Be careful!");
                 break;
             case null:
-                sig = "Bilinmiyor"; risk = RiskLevel.Bilinmiyor;
-                note = "İmza durumu okunamadı.";
+                sig = L.T("Bilinmiyor", "Unknown"); risk = RiskLevel.Bilinmiyor;
+                note = L.T("İmza durumu okunamadı.", "Could not read the signature status.");
                 break;
             default:
-                sig = "Doğrulanamadı"; risk = RiskLevel.Orta;
-                note = "İmza doğrulanamadı.";
+                sig = L.T("Doğrulanamadı", "Not verified"); risk = RiskLevel.Orta;
+                note = L.T("İmza doğrulanamadı.", "The signature could not be verified.");
                 break;
         }
 
@@ -174,7 +185,8 @@ public static class StartupScanner
         if (lower.Contains(@"\temp\") || lower.Contains(@"\downloads\") || lower.Contains(@"\users\public\"))
         {
             risk = RiskLevel.Yuksek;
-            note = "Geçici, İndirilenler ya da herkese açık klasörden çalışıyor. Tanımıyorsan kaldır. " + note;
+            note = L.T("Geçici, İndirilenler ya da herkese açık klasörden çalışıyor. Tanımıyorsan kaldır. ",
+                       "Runs from a temporary, Downloads or public folder. Remove it if you don't recognize it. ") + note;
         }
 
         return new StartupItem(name, source, path, sig, risk, note);
@@ -184,7 +196,7 @@ public static class StartupScanner
 [SupportedOSPlatform("windows")]
 public class StartupCheck : ISecurityCheck
 {
-    public string Name => "Başlangıç programları";
+    public string Name => L.T("Başlangıç programları", "Startup programs");
     private const int Weight = 10;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -196,17 +208,21 @@ public class StartupCheck : ISecurityCheck
         {
             string names = string.Join(", ", risky.Take(3).Select(i => i.Name));
             return new CheckResult(Name, CheckStatus.Basarisiz,
-                $"{risky.Count} başlangıç programı riskli görünüyor: {names}",
-                "Başlangıç Programları sekmesinde ayrıntılara bak. Tanımadıklarını Görev Yöneticisi > Başlangıç uygulamaları bölümünden kapat.",
+                L.T($"{risky.Count} başlangıç programı riskli görünüyor: {names}",
+                    $"{risky.Count} startup program(s) look risky: {names}"),
+                L.T("Başlangıç Programları sekmesinde ayrıntılara bak. Tanımadıklarını Görev Yöneticisi > Başlangıç uygulamaları bölümünden kapat.",
+                    "See the details in the Startup Programs tab. Disable the ones you don't recognize in Task Manager > Startup apps."),
                 Weight);
         }
 
-        int imzasiz = items.Count(i => i.Signature == "İmzasız");
-        string extra = imzasiz > 0
-            ? $" ({imzasiz} tanesi imzasız, bu tek başına zararlı demek değildir.)"
+        int unsigned = items.Count(i => i.Signature == StartupScanner.SigUnsigned);
+        string extra = unsigned > 0
+            ? L.T($" ({unsigned} tanesi imzasız, bu tek başına zararlı demek değildir.)",
+                  $" ({unsigned} unsigned, which alone does not mean malicious.)")
             : "";
 
         return new CheckResult(Name, CheckStatus.Basarili,
-            $"{items.Count} başlangıç programı bulundu, belirgin bir risk yok.{extra}", "", Weight);
+            L.T($"{items.Count} başlangıç programı bulundu, belirgin bir risk yok.{extra}",
+                $"{items.Count} startup program(s) found, no obvious risk.{extra}"), "", Weight);
     }
 }

@@ -95,8 +95,7 @@ public static class NetworkScanner
 
         var checks = ProbePorts.Select(p => TcpAliveAsync(ip, p, 400, ct)).ToList();
         bool[] results = await Task.WhenAll(checks);
-        return results.Any(r => r) ? "TCP yanıtı" : null;
-    }
+return results.Any(r => r) ? L.T("TCP yanıtı", "TCP response") : null;    }
 
     private static async Task<bool> TcpAliveAsync(IPAddress ip, int port, int timeoutMs, CancellationToken ct)
     {
@@ -135,8 +134,9 @@ public static class NetworkScanner
             || ip.AddressFamily != AddressFamily.InterNetwork
             || !int.TryParse(parts[1], out int prefix)
             || prefix < 20 || prefix > 30)
-            throw new FormatException("Geçersiz ağ. Örnek: 192.168.1.0/24 (önek 20-30 arası)");
-
+throw new FormatException(L.T(
+    "Geçersiz ağ. Örnek: 192.168.1.0/24 (önek 20-30 arası)",
+    "Invalid network. Example: 192.168.1.0/24 (prefix between 20 and 30)"));
         uint mask = uint.MaxValue << (32 - prefix);
         uint network = IpToNumber(ip) & mask;
         uint broadcast = network | ~mask;
