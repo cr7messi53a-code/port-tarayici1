@@ -36,6 +36,7 @@ public static class SecurityAudit
     new AutoLoginCheck(),
     new SharedFoldersCheck(),
     new WifiCheck(),
+        new StartupCheck(),
 };
 
     public static async Task<int> RunAsync(

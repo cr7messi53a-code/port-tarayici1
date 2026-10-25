@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<PortResult> _ports = new();
     private readonly ObservableCollection<DeviceResult> _devices = new();
     private readonly ObservableCollection<CheckResult> _checks = new();
+        private readonly ObservableCollection<StartupItem> _startup = new();
     private CancellationTokenSource? _cts;
     private int? _lastScore;
 
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
         PortGrid.ItemsSource = _ports;
         DeviceGrid.ItemsSource = _devices;
         AuditGrid.ItemsSource = _checks;
+                StartupGrid.ItemsSource = _startup;
         CidrBox.Text = NetworkScanner.GetLocalCidr() ?? "192.168.1.0/24";
     }
 
@@ -31,6 +33,7 @@ public partial class MainWindow : Window
         ScanBtn.IsEnabled = !busy;
         NetBtn.IsEnabled = !busy;
         AuditBtn.IsEnabled = !busy;
+                StartupBtn.IsEnabled = !busy;
         ReportBtn.IsEnabled = !busy;
         CancelBtn.IsEnabled = busy;
     }
@@ -225,6 +228,32 @@ public partial class MainWindow : Window
             StatusText.Text = "Rapor kaydedilemedi: " + ex.Message;
         }
     }
+    private async void StartupBtn_Click(object sender, RoutedEventArgs e)
+    {
+        _startup.Clear();
+        Bar.Value = 0;
+        Bar.IsIndeterminate = true;
+        SetBusy(true);
+        StatusText.Text = "Başlangıç programları taranıyor...";
+        _cts = new CancellationTokenSource();
 
+        try
+        {
+            var items = await StartupScanner.ScanAsync(_cts.Token);
+            foreach (var item in items) _startup.Add(item);
+
+            int yuksek = items.Count(i => i.Risk == RiskLevel.Yuksek);
+            StatusText.Text = yuksek == 0
+                ? $"Bitti. {items.Count} başlangıç programı, belirgin bir risk yok."
+                : $"Bitti. {items.Count} programdan {yuksek} tanesi riskli görünüyor.";
+        }
+        catch (OperationCanceledException) { StatusText.Text = "İptal edildi."; }
+        catch (Exception ex) { StatusText.Text = "Hata: " + ex.Message; }
+        finally
+        {
+            Bar.IsIndeterminate = false;
+            SetBusy(false);
+        }
+    }
     private void CancelBtn_Click(object sender, RoutedEventArgs e) => _cts?.Cancel();
 }
