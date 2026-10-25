@@ -8,10 +8,10 @@ public record CheckResult(string Name, CheckStatus Status, string Message, strin
 {
     public string StatusText => Status switch
     {
-        CheckStatus.Basarili => "✔ İyi",
-        CheckStatus.Uyari => "⚠ Dikkat",
-        CheckStatus.Basarisiz => "✖ Sorun",
-        _ => "? Bilinmiyor"
+        CheckStatus.Basarili => L.T("✔ İyi", "✔ Good"),
+        CheckStatus.Uyari => L.T("⚠ Dikkat", "⚠ Warning"),
+        CheckStatus.Basarisiz => L.T("✖ Sorun", "✖ Problem"),
+        _ => L.T("? Bilinmiyor", "? Unknown")
     };
 }
 
@@ -25,19 +25,19 @@ public interface ISecurityCheck
 public static class SecurityAudit
 {
     public static List<ISecurityCheck> AllChecks() => new()
-{
-    new FirewallCheck(),
-    new DefenderCheck(),
-    new UacCheck(),
-    new RdpCheck(),
-    new WindowsUpdateCheck(),
-    new Smb1Check(),
-    new GuestAccountCheck(),
-    new AutoLoginCheck(),
-    new SharedFoldersCheck(),
-    new WifiCheck(),
+    {
+        new FirewallCheck(),
+        new DefenderCheck(),
+        new UacCheck(),
+        new RdpCheck(),
+        new WindowsUpdateCheck(),
+        new Smb1Check(),
+        new GuestAccountCheck(),
+        new AutoLoginCheck(),
+        new SharedFoldersCheck(),
+        new WifiCheck(),
         new StartupCheck(),
-};
+    };
 
     public static async Task<int> RunAsync(
         Action<CheckResult> onResult,
@@ -59,7 +59,7 @@ public static class SecurityAudit
             catch (Exception ex)
             {
                 r = new CheckResult(checks[i].Name, CheckStatus.Bilinmiyor,
-                    "Kontrol edilemedi: " + ex.Message, "", 0);
+                    L.T("Kontrol edilemedi: ", "Could not be checked: ") + ex.Message, "", 0);
             }
 
             results.Add(r);

@@ -6,7 +6,7 @@ namespace PortScanner.Core;
 [SupportedOSPlatform("windows")]
 public class WifiCheck : ISecurityCheck
 {
-    public string Name => "Kayıtlı Wi-Fi ağları";
+    public string Name => L.T("Kayıtlı Wi-Fi ağları", "Saved Wi-Fi networks");
     private const int Weight = 15;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -30,7 +30,8 @@ public class WifiCheck : ISecurityCheck
             var files = Directory.GetFiles(dir, "*.xml");
             if (output != "OK" || files.Length == 0)
                 return new CheckResult(Name, CheckStatus.Bilinmiyor,
-                    "Kayıtlı Wi-Fi ağı bulunamadı (bilgisayarda Wi-Fi olmayabilir).", "", Weight);
+                    L.T("Kayıtlı Wi-Fi ağı bulunamadı (bilgisayarda Wi-Fi olmayabilir).",
+                        "No saved Wi-Fi network found (this computer may not have Wi-Fi)."), "", Weight);
 
             var open = new List<string>();
             var wep = new List<string>();
@@ -58,20 +59,25 @@ public class WifiCheck : ISecurityCheck
             {
                 var bad = open.Concat(wep).ToList();
                 return new CheckResult(Name, CheckStatus.Basarisiz,
-                    $"Şifresiz veya eski (WEP) kayıtlı ağlar: {Join(bad)}. Bu ağlarda trafiğin başkaları tarafından görülebilir.",
-                    "Halka açık ağları (kafe, otel, belediye vb.) işin bitince 'Unut' ya da otomatik bağlanmayı kapat: Ayarlar > Ağ ve İnternet > Wi-Fi > Bilinen ağları yönet. Bağlanman gerekirse VPN kullan. Kendi modemin ise güvenliğini WPA2 veya WPA3 yap.",
+                    L.T($"Şifresiz veya eski (WEP) kayıtlı ağlar: {Join(bad)}. Bu ağlarda trafiğin başkaları tarafından görülebilir.",
+                        $"Saved networks with no password or old WEP: {Join(bad)}. Others may be able to see your traffic on these networks."),
+                    L.T("Halka açık ağları (kafe, otel, belediye vb.) işin bitince 'Unut' ya da otomatik bağlanmayı kapat: Ayarlar > Ağ ve İnternet > Wi-Fi > Bilinen ağları yönet. Bağlanman gerekirse VPN kullan. Kendi modemin ise güvenliğini WPA2 veya WPA3 yap.",
+                        "When you are done with public networks (cafe, hotel, municipality, etc.), 'Forget' them or turn off auto-connect: Settings > Network & internet > Wi-Fi > Manage known networks. Use a VPN if you must connect. If it is your own router, set its security to WPA2 or WPA3."),
                     Weight);
             }
 
             if (weak.Count > 0)
             {
                 return new CheckResult(Name, CheckStatus.Uyari,
-                    $"Eski şifreleme (WPA/TKIP) kullanan ağlar: {Join(weak)}",
-                    "Kendi modemin ise yönetim panelinden Wi-Fi güvenliğini WPA2-AES veya WPA3 yap.", Weight);
+                    L.T($"Eski şifreleme (WPA/TKIP) kullanan ağlar: {Join(weak)}",
+                        $"Networks using old encryption (WPA/TKIP): {Join(weak)}"),
+                    L.T("Kendi modemin ise yönetim panelinden Wi-Fi güvenliğini WPA2-AES veya WPA3 yap.",
+                        "If it is your own router, set the Wi-Fi security to WPA2-AES or WPA3 in its admin panel."), Weight);
             }
 
             return new CheckResult(Name, CheckStatus.Basarili,
-                $"{files.Length} kayıtlı ağın tamamı modern şifreleme kullanıyor.", "", Weight);
+                L.T($"{files.Length} kayıtlı ağın tamamı modern şifreleme kullanıyor.",
+                    $"All {files.Length} saved networks use modern encryption."), "", Weight);
         }
         finally
         {
@@ -83,7 +89,8 @@ public class WifiCheck : ISecurityCheck
     {
         var shown = names.Take(5).ToList();
         string text = string.Join(", ", shown);
-        if (names.Count > shown.Count) text += $" (+{names.Count - shown.Count} ağ daha)";
+        if (names.Count > shown.Count)
+            text += L.T($" (+{names.Count - shown.Count} ağ daha)", $" (+{names.Count - shown.Count} more)");
         return text;
     }
 }

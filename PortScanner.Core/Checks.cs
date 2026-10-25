@@ -9,16 +9,16 @@ namespace PortScanner.Core;
 [SupportedOSPlatform("windows")]
 public class FirewallCheck : ISecurityCheck
 {
-    public string Name => "Güvenlik duvarı";
+    public string Name => L.T("Güvenlik duvarı", "Firewall");
     private const int Weight = 30;
 
     public Task<CheckResult> RunAsync(CancellationToken ct)
     {
         var profiles = new (string Key, string Label)[]
         {
-            ("DomainProfile", "Etki alanı"),
-            ("StandardProfile", "Özel ağ"),
-            ("PublicProfile", "Genel ağ"),
+            ("DomainProfile", L.T("Etki alanı", "Domain")),
+            ("StandardProfile", L.T("Özel ağ", "Private network")),
+            ("PublicProfile", L.T("Genel ağ", "Public network")),
         };
 
         var off = new List<string>();
@@ -33,10 +33,12 @@ public class FirewallCheck : ISecurityCheck
 
         var result = off.Count == 0
             ? new CheckResult(Name, CheckStatus.Basarili,
-                "Güvenlik duvarı tüm ağ türlerinde açık.", "", Weight)
+                L.T("Güvenlik duvarı tüm ağ türlerinde açık.",
+                    "The firewall is on for all network types."), "", Weight)
             : new CheckResult(Name, CheckStatus.Basarisiz,
-                "Şu profillerde kapalı: " + string.Join(", ", off),
-                "Windows Güvenliği > Güvenlik duvarı ve ağ koruması bölümünden aç.", Weight);
+                L.T("Şu profillerde kapalı: ", "Turned off for: ") + string.Join(", ", off),
+                L.T("Windows Güvenliği > Güvenlik duvarı ve ağ koruması bölümünden aç.",
+                    "Turn it on in Windows Security > Firewall & network protection."), Weight);
 
         return Task.FromResult(result);
     }
@@ -45,7 +47,7 @@ public class FirewallCheck : ISecurityCheck
 [SupportedOSPlatform("windows")]
 public class UacCheck : ISecurityCheck
 {
-    public string Name => "Kullanıcı Hesabı Denetimi (UAC)";
+    public string Name => L.T("Kullanıcı Hesabı Denetimi (UAC)", "User Account Control (UAC)");
     private const int Weight = 20;
 
     public Task<CheckResult> RunAsync(CancellationToken ct)
@@ -56,10 +58,13 @@ public class UacCheck : ISecurityCheck
 
         var result = enabled
             ? new CheckResult(Name, CheckStatus.Basarili,
-                "UAC açık. Programlar izinsiz yönetici yetkisi alamaz.", "", Weight)
+                L.T("UAC açık. Programlar izinsiz yönetici yetkisi alamaz.",
+                    "UAC is on. Programs cannot get administrator rights without permission."), "", Weight)
             : new CheckResult(Name, CheckStatus.Basarisiz,
-                "UAC kapalı. Zararlı bir program sessizce yönetici yetkisi alabilir.",
-                "Başlat'a 'UAC' yaz > 'Kullanıcı Hesabı Denetimi ayarlarını değiştir' > sürgüyü yukarı çek.", Weight);
+                L.T("UAC kapalı. Zararlı bir program sessizce yönetici yetkisi alabilir.",
+                    "UAC is off. A malicious program could silently gain administrator rights."),
+                L.T("Başlat'a 'UAC' yaz > 'Kullanıcı Hesabı Denetimi ayarlarını değiştir' > sürgüyü yukarı çek.",
+                    "Type 'UAC' in Start > 'Change User Account Control settings' > move the slider up."), Weight);
 
         return Task.FromResult(result);
     }
@@ -68,7 +73,7 @@ public class UacCheck : ISecurityCheck
 [SupportedOSPlatform("windows")]
 public class RdpCheck : ISecurityCheck
 {
-    public string Name => "Uzak Masaüstü (RDP)";
+    public string Name => L.T("Uzak Masaüstü (RDP)", "Remote Desktop (RDP)");
     private const int Weight = 20;
 
     public Task<CheckResult> RunAsync(CancellationToken ct)
@@ -79,10 +84,13 @@ public class RdpCheck : ISecurityCheck
 
         var result = denied
             ? new CheckResult(Name, CheckStatus.Basarili,
-                "Uzak Masaüstü kapalı. Dışarıdan bağlanılamaz.", "", Weight)
+                L.T("Uzak Masaüstü kapalı. Dışarıdan bağlanılamaz.",
+                    "Remote Desktop is off. Nobody can connect from outside."), "", Weight)
             : new CheckResult(Name, CheckStatus.Uyari,
-                "Uzak Masaüstü açık. Saldırganların en çok denediği kapılardan biri.",
-                "Kullanmıyorsan Ayarlar > Sistem > Uzak Masaüstü bölümünden kapat.", Weight);
+                L.T("Uzak Masaüstü açık. Saldırganların en çok denediği kapılardan biri.",
+                    "Remote Desktop is on. It is one of the doors attackers try most often."),
+                L.T("Kullanmıyorsan Ayarlar > Sistem > Uzak Masaüstü bölümünden kapat.",
+                    "If you don't use it, turn it off in Settings > System > Remote Desktop."), Weight);
 
         return Task.FromResult(result);
     }
@@ -91,7 +99,7 @@ public class RdpCheck : ISecurityCheck
 [SupportedOSPlatform("windows")]
 public class DefenderCheck : ISecurityCheck
 {
-    public string Name => "Virüs koruması (Windows Defender)";
+    public string Name => L.T("Virüs koruması (Windows Defender)", "Virus protection (Windows Defender)");
     private const int Weight = 30;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -111,29 +119,35 @@ public class DefenderCheck : ISecurityCheck
             || !int.TryParse(parts[1], out int ageDays))
         {
             return new CheckResult(Name, CheckStatus.Bilinmiyor,
-                "Defender bilgisi okunamadı. Başka bir antivirüs kullanıyor olabilirsin.",
-                "Kullandığın antivirüsün açık ve güncel olduğundan emin ol.", Weight);
+                L.T("Defender bilgisi okunamadı. Başka bir antivirüs kullanıyor olabilirsin.",
+                    "Could not read Defender status. You may be using another antivirus."),
+                L.T("Kullandığın antivirüsün açık ve güncel olduğundan emin ol.",
+                    "Make sure your antivirus is on and up to date."), Weight);
         }
 
         if (!realTime)
             return new CheckResult(Name, CheckStatus.Basarisiz,
-                "Gerçek zamanlı koruma kapalı.",
-                "Windows Güvenliği > Virüs ve tehdit koruması > Gerçek zamanlı korumayı aç.", Weight);
+                L.T("Gerçek zamanlı koruma kapalı.", "Real-time protection is off."),
+                L.T("Windows Güvenliği > Virüs ve tehdit koruması > Gerçek zamanlı korumayı aç.",
+                    "Turn it on in Windows Security > Virus & threat protection > Real-time protection."), Weight);
 
         if (ageDays > 7)
             return new CheckResult(Name, CheckStatus.Uyari,
-                $"Koruma açık ama virüs tanımları {ageDays} gün önce güncellenmiş.",
-                "Windows Güncelleştirme'den güncellemeleri kontrol et.", Weight);
+                L.T($"Koruma açık ama virüs tanımları {ageDays} gün önce güncellenmiş.",
+                    $"Protection is on but virus definitions were updated {ageDays} days ago."),
+                L.T("Windows Güncelleştirme'den güncellemeleri kontrol et.",
+                    "Check for updates in Windows Update."), Weight);
 
         return new CheckResult(Name, CheckStatus.Basarili,
-            "Gerçek zamanlı koruma açık, tanımlar güncel.", "", Weight);
+            L.T("Gerçek zamanlı koruma açık, tanımlar güncel.",
+                "Real-time protection is on and definitions are up to date."), "", Weight);
     }
 }
 
 [SupportedOSPlatform("windows")]
 public class WindowsUpdateCheck : ISecurityCheck
 {
-    public string Name => "Windows güncellemeleri";
+    public string Name => L.T("Windows güncellemeleri", "Windows updates");
     private const int Weight = 20;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -147,35 +161,42 @@ public class WindowsUpdateCheck : ISecurityCheck
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch { output = ""; }
 
+        string checkAdvice = L.T("Ayarlar > Windows Update > Güncellemeleri denetle.",
+                                 "Settings > Windows Update > Check for updates.");
+
         if (!DateTime.TryParseExact(output, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                 DateTimeStyles.None, out var last))
         {
             return new CheckResult(Name, CheckStatus.Bilinmiyor,
-                "Son güncelleme tarihi okunamadı.",
-                "Ayarlar > Windows Update bölümünden güncellemeleri kontrol et.", Weight);
+                L.T("Son güncelleme tarihi okunamadı.", "Could not read the last update date."),
+                checkAdvice, Weight);
         }
 
         int days = (int)(DateTime.Now - last).TotalDays;
 
         if (days <= 45)
             return new CheckResult(Name, CheckStatus.Basarili,
-                $"Son güvenlik güncellemesi {days} gün önce yüklenmiş.", "", Weight);
+                L.T($"Son güvenlik güncellemesi {days} gün önce yüklenmiş.",
+                    $"The last security update was installed {days} days ago."), "", Weight);
 
         if (days <= 90)
             return new CheckResult(Name, CheckStatus.Uyari,
-                $"Son güncelleme {days} gün önce yüklenmiş.",
-                "Ayarlar > Windows Update > Güncellemeleri denetle.", Weight);
+                L.T($"Son güncelleme {days} gün önce yüklenmiş.",
+                    $"The last update was installed {days} days ago."),
+                checkAdvice, Weight);
 
         return new CheckResult(Name, CheckStatus.Basarisiz,
-            $"Son güncelleme {days} gün önce yüklenmiş. Bilinen açıklar kapatılmamış olabilir.",
-            "Ayarlar > Windows Update > Güncellemeleri denetle ve hepsini yükle.", Weight);
+            L.T($"Son güncelleme {days} gün önce yüklenmiş. Bilinen açıklar kapatılmamış olabilir.",
+                $"The last update was installed {days} days ago. Known vulnerabilities may be unpatched."),
+            L.T("Ayarlar > Windows Update > Güncellemeleri denetle ve hepsini yükle.",
+                "Settings > Windows Update > Check for updates and install them all."), Weight);
     }
 }
 
 [SupportedOSPlatform("windows")]
 public class Smb1Check : ISecurityCheck
 {
-    public string Name => "Eski dosya paylaşım protokolü (SMBv1)";
+    public string Name => L.T("Eski dosya paylaşım protokolü (SMBv1)", "Legacy file sharing protocol (SMBv1)");
     private const int Weight = 15;
 
     public Task<CheckResult> RunAsync(CancellationToken ct)
@@ -186,10 +207,12 @@ public class Smb1Check : ISecurityCheck
 
         var result = enabled
             ? new CheckResult(Name, CheckStatus.Basarisiz,
-                "SMBv1 açık. Fidye yazılımlarının (WannaCry gibi) kullandığı eski bir protokol.",
-                "Başlat'a 'Windows özelliklerini aç veya kapat' yaz > 'SMB 1.0/CIFS' kutusunun işaretini kaldır.", Weight)
+                L.T("SMBv1 açık. Fidye yazılımlarının (WannaCry gibi) kullandığı eski bir protokol.",
+                    "SMBv1 is on. It is an old protocol used by ransomware such as WannaCry."),
+                L.T("Başlat'a 'Windows özelliklerini aç veya kapat' yaz > 'SMB 1.0/CIFS' kutusunun işaretini kaldır.",
+                    "Type 'Turn Windows features on or off' in Start > uncheck 'SMB 1.0/CIFS File Sharing Support'."), Weight)
             : new CheckResult(Name, CheckStatus.Basarili,
-                "SMBv1 açık olarak ayarlanmamış.", "", Weight);
+                L.T("SMBv1 açık olarak ayarlanmamış.", "SMBv1 is not enabled."), "", Weight);
 
         return Task.FromResult(result);
     }
@@ -198,7 +221,7 @@ public class Smb1Check : ISecurityCheck
 [SupportedOSPlatform("windows")]
 public class GuestAccountCheck : ISecurityCheck
 {
-    public string Name => "Konuk (Guest) hesabı";
+    public string Name => L.T("Konuk (Guest) hesabı", "Guest account");
     private const int Weight = 5;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -214,21 +237,23 @@ public class GuestAccountCheck : ISecurityCheck
 
         if (!bool.TryParse(output, out bool enabled))
             return new CheckResult(Name, CheckStatus.Bilinmiyor,
-                "Konuk hesabı durumu okunamadı.", "", Weight);
+                L.T("Konuk hesabı durumu okunamadı.", "Could not read the guest account status."), "", Weight);
 
         return enabled
             ? new CheckResult(Name, CheckStatus.Basarisiz,
-                "Konuk hesabı açık. Parolasız giriş kapısı olabilir.",
-                "Yönetici PowerShell'de: net user guest /active:no", Weight)
+                L.T("Konuk hesabı açık. Parolasız giriş kapısı olabilir.",
+                    "The guest account is on. It can be a password-free way in."),
+                L.T("Yönetici PowerShell'de: net user guest /active:no",
+                    "In an administrator PowerShell: net user guest /active:no"), Weight)
             : new CheckResult(Name, CheckStatus.Basarili,
-                "Konuk hesabı kapalı.", "", Weight);
+                L.T("Konuk hesabı kapalı.", "The guest account is off."), "", Weight);
     }
 }
 
 [SupportedOSPlatform("windows")]
 public class AutoLoginCheck : ISecurityCheck
 {
-    public string Name => "Otomatik oturum açma";
+    public string Name => L.T("Otomatik oturum açma", "Automatic sign-in");
     private const int Weight = 10;
 
     public Task<CheckResult> RunAsync(CancellationToken ct)
@@ -239,10 +264,12 @@ public class AutoLoginCheck : ISecurityCheck
 
         var result = auto
             ? new CheckResult(Name, CheckStatus.Uyari,
-                "Bilgisayar parola sormadan otomatik açılıyor. Cihaza erişen herkes içeri girer.",
-                "Başlat'a 'netplwiz' yaz > 'Kullanıcıların bu bilgisayarı kullanmak için ... girmesi gerekir' kutusunu işaretle.", Weight)
+                L.T("Bilgisayar parola sormadan otomatik açılıyor. Cihaza erişen herkes içeri girer.",
+                    "The computer signs in automatically without a password. Anyone with access to the device gets in."),
+                L.T("Başlat'a 'netplwiz' yaz > 'Kullanıcıların bu bilgisayarı kullanmak için ... girmesi gerekir' kutusunu işaretle.",
+                    "Type 'netplwiz' in Start > check 'Users must enter a user name and password to use this computer'."), Weight)
             : new CheckResult(Name, CheckStatus.Basarili,
-                "Otomatik oturum açma kapalı.", "", Weight);
+                L.T("Otomatik oturum açma kapalı.", "Automatic sign-in is off."), "", Weight);
 
         return Task.FromResult(result);
     }
@@ -251,7 +278,7 @@ public class AutoLoginCheck : ISecurityCheck
 [SupportedOSPlatform("windows")]
 public class SharedFoldersCheck : ISecurityCheck
 {
-    public string Name => "Paylaşılan klasörler";
+    public string Name => L.T("Paylaşılan klasörler", "Shared folders");
     private const int Weight = 10;
 
     public async Task<CheckResult> RunAsync(CancellationToken ct)
@@ -267,16 +294,17 @@ public class SharedFoldersCheck : ISecurityCheck
 
         if (!output.StartsWith("OK|"))
             return new CheckResult(Name, CheckStatus.Bilinmiyor,
-                "Paylaşımlar okunamadı.", "", Weight);
+                L.T("Paylaşımlar okunamadı.", "Could not read the shares."), "", Weight);
 
         string names = output[3..].Trim();
 
         return names.Length == 0
             ? new CheckResult(Name, CheckStatus.Basarili,
-                "Ağda paylaşılan klasör yok.", "", Weight)
+                L.T("Ağda paylaşılan klasör yok.", "No folders are shared on the network."), "", Weight)
             : new CheckResult(Name, CheckStatus.Uyari,
-                $"Ağa açık klasörler: {names}",
-                "Paylaşımın gerekli değilse klasöre sağ tıkla > Özellikler > Paylaşım > Gelişmiş paylaşım > işareti kaldır.", Weight);
+                L.T($"Ağa açık klasörler: {names}", $"Folders shared on the network: {names}"),
+                L.T("Paylaşımın gerekli değilse klasöre sağ tıkla > Özellikler > Paylaşım > Gelişmiş paylaşım > işareti kaldır.",
+                    "If you don't need sharing, right-click the folder > Properties > Sharing > Advanced Sharing > uncheck it."), Weight);
     }
 }
 
@@ -294,7 +322,7 @@ internal static class PowerShellRunner
             CreateNoWindow = true,
         };
 
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("PowerShell başlatılamadı.");
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException("PowerShell could not be started.");
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(TimeSpan.FromSeconds(15));
 
