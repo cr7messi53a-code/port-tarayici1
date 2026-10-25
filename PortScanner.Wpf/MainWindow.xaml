@@ -4,15 +4,25 @@
         Title="Port Tarayıcı" Height="620" Width="1080">
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
+        <!-- Dil seçici -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+            <TextBlock x:Name="LangLabel" Text="Dil:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="LangBox" Width="110" SelectionChanged="LangBox_Changed">
+                <ComboBoxItem Content="Türkçe"/>
+                <ComboBoxItem Content="English"/>
+            </ComboBox>
+        </StackPanel>
+
+        <TabControl Grid.Row="1">
 
             <!-- SEKME 1: Ağ Tarayıcı -->
-            <TabItem Header="Ağ Tarayıcı">
+            <TabItem x:Name="TabNet" Header="Ağ Tarayıcı">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -21,21 +31,23 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="0">
-                        <TextBlock Text="Ağ:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="NetLabel" Text="Ağ:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox x:Name="CidrBox" Width="160"/>
-                        <Button x:Name="NetBtn" Content="Ağı Tara" Width="90" Margin="16,0,0,0" Click="NetBtn_Click"/>
+                        <Button x:Name="NetBtn" Content="Ağı Tara" MinWidth="90" Padding="10,2"
+                                Margin="16,0,0,0" Click="NetBtn_Click"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,10,0,12">
-                        <TextBlock Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock x:Name="HostLabel" Text="Hedef:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox x:Name="HostBox" Text="127.0.0.1" Width="140"/>
-                        <TextBlock Text="Port:" VerticalAlignment="Center" Margin="16,0,8,0"/>
+                        <TextBlock x:Name="PortLabel" Text="Port:" VerticalAlignment="Center" Margin="16,0,8,0"/>
                         <TextBox x:Name="StartBox" Text="1" Width="60"/>
                         <TextBlock Text="-" VerticalAlignment="Center" Margin="6,0"/>
                         <TextBox x:Name="EndBox" Text="1024" Width="60"/>
-                        <Button x:Name="ScanBtn" Content="Portları Tara" Width="100" Margin="16,0,0,0" Click="ScanBtn_Click"/>
-                        <Button x:Name="CancelBtn" Content="İptal" Width="80" Margin="8,0,0,0"
-                                IsEnabled="False" Click="CancelBtn_Click"/>
+                        <Button x:Name="ScanBtn" Content="Portları Tara" MinWidth="100" Padding="10,2"
+                                Margin="16,0,0,0" Click="ScanBtn_Click"/>
+                        <Button x:Name="CancelBtn" Content="İptal" MinWidth="80" Padding="10,2"
+                                Margin="8,0,0,0" IsEnabled="False" Click="CancelBtn_Click"/>
                     </StackPanel>
 
                     <Grid Grid.Row="2">
@@ -100,7 +112,7 @@
             </TabItem>
 
             <!-- SEKME 2: Bilgisayar Kontrolü -->
-            <TabItem Header="Bilgisayar Kontrolü">
+            <TabItem x:Name="TabAudit" Header="Bilgisayar Kontrolü">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -165,12 +177,12 @@
             </TabItem>
 
             <!-- SEKME 3: Parola Kontrolü -->
-            <TabItem Header="Parola Kontrolü">
+            <TabItem x:Name="TabPw" Header="Parola Kontrolü">
                 <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
-                    <TextBlock Text="Parolanın veri sızıntılarında geçip geçmediğini kontrol et."
-                               FontSize="15" Margin="0,0,0,4"/>
-                    <TextBlock Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"
-                               Text="Parolan bilgisayarından çıkmaz. Have I Been Pwned servisine sadece parolanın SHA-1 özetinin ilk 5 karakteri gönderilir."/>
+                    <TextBlock x:Name="PwTitle" FontSize="15" Margin="0,0,0,4"
+                               Text="Parolanın veri sızıntılarında geçip geçmediğini kontrol et."/>
+                    <TextBlock x:Name="PwInfo" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,12"
+                               Text="Parolan bilgisayarından çıkmaz."/>
                     <PasswordBox x:Name="PwBox" Height="28" FontSize="14" VerticalContentAlignment="Center"/>
                     <Button x:Name="PwBtn" Content="Kontrol Et" Padding="16,6" Margin="0,10,0,0"
                             HorizontalAlignment="Left" Click="PwBtn_Click"/>
@@ -181,7 +193,7 @@
             </TabItem>
 
             <!-- SEKME 4: Başlangıç Programları -->
-            <TabItem Header="Başlangıç Programları">
+            <TabItem x:Name="TabStartup" Header="Başlangıç Programları">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -191,8 +203,7 @@
                     <StackPanel Margin="0,0,0,12">
                         <Button x:Name="StartupBtn" Content="Başlangıç Programlarını Listele"
                                 Padding="16,8" HorizontalAlignment="Left" Click="StartupBtn_Click"/>
-                        <TextBlock Foreground="Gray" TextWrapping="Wrap" Margin="0,8,0,0"
-                                   Text="Windows açılırken kendiliğinden çalışan programlar. İmzasız olmak zararlı olmak demek değildir; tanımadığın ve riskli işaretlenenlere dikkat et."/>
+                        <TextBlock x:Name="StartupInfo" Foreground="Gray" TextWrapping="Wrap" Margin="0,8,0,0"/>
                     </StackPanel>
 
                     <DataGrid x:Name="StartupGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True">
@@ -242,9 +253,9 @@
 
         </TabControl>
 
-        <ProgressBar x:Name="Bar" Grid.Row="1" Height="10" Margin="0,12,0,0"/>
+        <ProgressBar x:Name="Bar" Grid.Row="2" Height="10" Margin="0,12,0,0"/>
 
-        <DockPanel Grid.Row="2" Margin="0,8,0,0">
+        <DockPanel Grid.Row="3" Margin="0,8,0,0">
             <Button x:Name="ReportBtn" Content="Raporu Kaydet (HTML)" DockPanel.Dock="Right"
                     Padding="12,4" Click="ReportBtn_Click"/>
             <TextBlock x:Name="StatusText" Text="Hazır." VerticalAlignment="Center"/>
